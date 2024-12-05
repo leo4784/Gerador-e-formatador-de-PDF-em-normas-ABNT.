@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criador de PDF com Divisão Automática - Formatação ABNT</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .login-container, .pdf-container {
+            display: none;
+        }
+        .login-form, .pdf-form {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .pdf-container {
+            display: block;
+        }
+
+        /* Estilo para o campo de texto (textarea) */
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            height: 300px; /* Aumenta a altura do campo de texto */
+            resize: vertical; /* Permite redimensionar o campo de texto para cima e para baixo */
+        }
+    </style>
+</head>
+<body>
+
+<!-- Tela de Login -->
+<div id="login-container" class="login-container">
+    <h1>Login</h1>
+    <div class="login-form">
+        <label for="username">Usuário:</label>
+        <input type="text" id="username" placeholder="Digite seu nome de usuário" />
+        <label for="password">Senha:</label>
+        <input type="password" id="password" placeholder="Digite sua senha" />
+        <button id="login-button">Entrar</button>
+    </div>
+</div>
+
+<!-- Criador de PDF -->
+<div id="pdf-container" class="pdf-container">
+    <h1>Criador de PDF com Divisão Automática - Formatação ABNT</h1>
+
+    <h2>Informações para Capa (Facultativas)</h2>
+    <label for="title-capa">Título do Trabalho:</label>
+    <input type="text" id="title-capa" placeholder="Título do Trabalho" />
+    <br>
+    <label for="author">Nome do Autor:</label>
+    <input type="text" id="author" placeholder="Nome do Autor" />
+    <br>
+    <label for="institution">Nome da Instituição:</label>
+    <input type="text" id="institution" placeholder="Nome da Instituição" />
+    <br>
+    <label for="professor">Nome do Professor:</label>
+    <input type="text" id="professor" placeholder="Nome do Professor" />
+    <br>
+    <label for="course">Curso:</label>
+    <input type="text" id="course" placeholder="Curso" />
+    <br>
+    <label for="subject">Matéria:</label>
+    <input type="text" id="subject" placeholder="Matéria" />
+    <br>
+    <label for="city">Cidade:</label>
+    <input type="text" id="city" placeholder="Cidade" />
+    <br>
+    <label for="year">Ano:</label>
+    <input type="text" id="year" placeholder="Ano" />
+    <br>
+    <label for="optional-info">Deseja incluir informações adicionais?</label>
+    <input type="checkbox" id="optional-info" /> 
+
+    <br><br>
+
+    <input type="text" id="title" placeholder="Título do Documento" />
+    <textarea id="content" placeholder="Digite seu texto aqui..."></textarea>
+    <button id="generate-pdf">Gerar PDF</button>
+</div>
+
+<script>
+    // Função de Login (apenas validação simples)
+    const validUser = {
+        username: "admin",
+        password: "admin"
+    };
+
+    // Mostrar o formulário de login
+    document.getElementById("login-container").style.display = "block";
+    document.getElementById("pdf-container").style.display = "none";
+
+    document.getElementById("login-button").addEventListener("click", function () {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        if (username === validUser.username && password === validUser.password) {
+            // Login bem-sucedido
+            document.getElementById("login-container").style.display = "none";
+            document.getElementById("pdf-container").style.display = "block";
+        } else {
+            // Login falhou
+            alert("Usuário ou senha incorretos. Tente novamente.");
+        }
+    });
+
+    // Função para formatar símbolos lógicos com seus códigos Unicode
+    function formatContentWithSymbols(content) {
+        return content
+            .replace(/\b∀\b/g, '\u2200') // Substitui ∀ por Unicode (quantificador universal)
+            .replace(/\b∃\b/g, '\u2203'); // Substitui ∃ por Unicode (quantificador existencial)
+    }
+
+    document.getElementById('generate-pdf').addEventListener('click', () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Definindo as margens ABNT (3 cm = 30 mm)
+        const margin = 30; // Margem de 3 cm (30mm)
+        const lineHeight = 10; // Altura da linha
+        const pageHeight = doc.internal.pageSize.height;
+        const pageWidth = doc.internal.pageSize.width;
+
+        // Fonte ABNT: Times New Roman, Tamanho 12
+        doc.setFont('times', 'normal');
+        doc.setFontSize(12);
+
+        // Função para gerar capa
+        function generateCoverPage() {
+            const titleCapa = document.getElementById('title-capa').value;
+            const author = document.getElementById('author').value;
+            const institution = document.getElementById('institution').value;
+            const professor = document.getElementById('professor').value;
+            const course = document.getElementById('course').value;
+            const subject = document.getElementById('subject').value;
+            const city = document.getElementById('city').value;
+            const year = document.getElementById('year').value;
+            const optionalInfo = document.getElementById('optional-info').checked;
+
+            // Adiciona a capa
+            doc.setFontSize(16);
+            doc.setFont('times', 'bold');
+
+            // Quebra o título longo em várias linhas, se necessário
+            const titleLines = doc.splitTextToSize(titleCapa, pageWidth - 2 * margin); 
+
+            doc.text(titleLines, margin, margin + 30); // Título do trabalho (em negrito, maior)
+
+            doc.setFontSize(12);
+            doc.setFont('times', 'normal');
+
+            // Nome do autor
+            if (author) {
+                doc.text(`Autor: ${author}`, margin, margin + 60);
+            }
+
+            // Nome do professor
+            if (professor) {
+                doc.text(`Professor: ${professor}`, margin, margin + 75);
+            }
+
+            // Nome da instituição
+            if (institution) {
+                doc.text(`Instituição: ${institution}`, margin, margin + 90);
+            }
+
+            // Curso e Matéria
+            if (course) {
+                doc.text(`Curso: ${course}`, margin, margin + 105);
+            }
+            if (subject) {
+                doc.text(`Matéria: ${subject}`, margin, margin + 120);
+            }
+
+            // Cidade e ano
+            if (city && year) {
+                doc.text(`${city} - ${year}`, margin, margin + 135);
+            }
+
+            // Informação adicional (facultativa)
+            if (optionalInfo) {
+                doc.text("Informações adicionais sobre o trabalho.", margin, margin + 150);
+            }
+        }
+
+        // Gerar capa (não adiciona uma nova página)
+        generateCoverPage();
+
+        // Começa a partir da segunda página para o conteúdo
+        doc.addPage();  // Adiciona a segunda página onde começa o conteúdo
+
+        // Adiciona o título do documento
+        const title = document.getElementById('title').value || 'Documento sem Título';
+        doc.setFontSize(16);
+        doc.setFont('times', 'bold');
+
+        // Quebra o título do documento em várias linhas, se necessário
+        const titleLines = doc.splitTextToSize(title, pageWidth - 2 * margin);
+        doc.text(titleLines, margin, margin + 10); // Título do documento em negrito
+
+        // Reposiciona para o corpo do texto
+        const content = document.getElementById('content').value.trim();
+        doc.setFontSize(12);
+        doc.setFont('times', 'normal');
+        let currentY = margin + 30; // Posição inicial após o título
+
+        // A largura disponível para o texto (considerando margens)
+        const availableWidth = pageWidth - 2 * margin;
+
+        // Divide o conteúdo em linhas para respeitar a largura disponível
+        const lines = doc.splitTextToSize(formatContentWithSymbols(content), availableWidth); // Ajusta a largura da linha e formata símbolos lógicos
+
+        // Adiciona o conteúdo no PDF, respeitando a altura da página
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+
+            // Verifica se o espaço disponível para a linha é suficiente
+            if (currentY + lineHeight > pageHeight - margin) {
+                doc.addPage(); // Adiciona nova página se a linha ultrapassar a margem
+                currentY = margin; // Reseta a posição para a nova página
+            }
+
+            // Adiciona a linha ao PDF sem espaçamento extra
+            doc.text(line, margin, currentY); // Adiciona a linha ao PDF
+            currentY += lineHeight; // Avança a posição Y para a próxima linha
+        }
+
+        // Adiciona numeração de página
+        const totalPages = doc.internal.pages.length;
+        const footerMargin = 10; // Distância da margem inferior onde a numeração vai aparecer
+
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.setFont('times', 'normal');
+            doc.setFontSize(10);
+            const pageNum = "Página " + i;
+            const pageWidth = doc.internal.pageSize.width;
+            const pageHeight = doc.internal.pageSize.height;
+
+            doc.text(pageNum, pageWidth - margin - 20, pageHeight - footerMargin);
+        }
+
+        // Salva o PDF
+        doc.save('documento_abnt.pdf');
+    });
+</script>
+
+</body>
+</html>
